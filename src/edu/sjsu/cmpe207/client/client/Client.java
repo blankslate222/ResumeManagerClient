@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe207.client.client;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -51,12 +52,11 @@ public class Client {
 		}
 
 		if ("2".equals(operationDetails.substring(0, 1))) {
-			if (args.length < 4) {
-				this.printUsage();
-				return -1;
-			} else {
-				this.getClientOp().setClientOperation(2);
-			}
+			/*
+			 * if (args.length < 4) { this.printUsage(); return -1; } else {
+			 * this.getClientOp().setClientOperation(2); }
+			 */
+			this.getClientOp().setClientOperation(2);
 		}
 
 		if ("3".equals(operationDetails)) {
@@ -99,8 +99,7 @@ public class Client {
 		try {
 
 			br = new BufferedReader(new InputStreamReader(cli.getInputStream()));
-			pw = new PrintWriter(cli.getOutputStream(),
-					true);
+			pw = new PrintWriter(cli.getOutputStream(), true);
 			pw.println(message);
 
 			System.out.println("Data Received:");
@@ -120,14 +119,14 @@ public class Client {
 			System.out.println(e.getMessage());
 			throw new IOException(e);
 		}
-//		} finally {
-//			try {
-//				//cli.shutdownInput();
-//				//cli.shutdownOutput();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
+		// } finally {
+		// try {
+		// //cli.shutdownInput();
+		// //cli.shutdownOutput();
+		// } catch (Exception e) {
+		// e.printStackTrace();
+		// }
+		// }
 		return result;
 	}
 
@@ -148,7 +147,16 @@ public class Client {
 	}
 
 	private void closeSocket() throws IOException {
-		this.clientOp.getSocket().close();
+		Socket s = clientOp.getSocket();
+		if (!s.isInputShutdown()) {
+			s.shutdownInput();
+		}
+		if (!s.isOutputShutdown()) {
+			s.shutdownOutput();
+		}
+		if (!s.isClosed()) {
+			s.close();
+		}
 	}
 
 	private int sendRequestDetails(String details) {
@@ -196,7 +204,20 @@ public class Client {
 				}
 				break;
 			case 2:
-				manager.setTargetFilePath(args[3]);
+				String path = "";
+				path = System.getProperty("user.home");
+				path += File.separator + "Downloads";
+				File dir = new File(path);
+				if (!dir.exists()) {
+					dir.mkdir();
+				}
+				path += File.separator + clientOp.getMessage().substring(1, 11)
+						+ "v" + clientOp.getMessage().substring(11) + ".pdf";
+				File dest = new File(path);
+				if (!dest.exists()) {
+					dest.createNewFile();
+				}
+				manager.setTargetFilePath(path);
 				if (manager.downloadFile() < 0) {
 					System.out.println("download failed");
 				}
@@ -210,7 +231,6 @@ public class Client {
 				sendRequestDetails("333333333333");
 				break;
 			}
-
 			closeSocket();
 		} catch (IOException e) {
 			e.printStackTrace();

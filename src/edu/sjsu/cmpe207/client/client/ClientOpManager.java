@@ -1,7 +1,5 @@
 package edu.sjsu.cmpe207.client.client;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,29 +24,25 @@ public class ClientOpManager {
 	public ClientOpManager(Socket sock) {
 		this.socket = sock;
 	}
-	
+
 	public void setTargetFilePath(String path) {
 		this.targetFilePath = path;
-	}
-	private void transferData(InputStream in, OutputStream out)
-			throws IOException {
-		byte[] buf = new byte[8192];
-		int len = 0;
-		while ((len = in.read(buf)) != -1) {
-			out.write(buf, 0, len);
-		}
 	}
 
 	public int uploadFile() {
 		int result = 0;
 		InputStream is = null;
 		OutputStream os = null;
+		byte[] buf = null;
 
 		try {
-			is = new BufferedInputStream(new FileInputStream(targetFilePath));
+			is = new FileInputStream(targetFilePath);
 			os = this.socket.getOutputStream();
-			transferData(is, os);
-			this.socket.shutdownOutput();
+			buf = new byte[8192];
+			int len = 0;
+			while ((len = is.read(buf)) != -1) {
+				os.write(buf, 0, len);
+			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			result = -1;
@@ -69,15 +63,21 @@ public class ClientOpManager {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	public int downloadFile() {
 		int result = 0;
 		InputStream is = null;
-		OutputStream os = null;
+		FileOutputStream os = null;
+		byte[] buf = new byte[8192];
+		int len = 0;
+
 		try {
 			is = this.socket.getInputStream();
-			os = new BufferedOutputStream(new FileOutputStream(targetFilePath));
-			transferData(is, os);
-			this.socket.shutdownInput();
+			os = new FileOutputStream(targetFilePath);
+
+			while ((len = is.read(buf)) != -1) {
+				os.write(buf);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
